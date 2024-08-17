@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "proxy_mock"
+version = "1.0.1"
+authors = []
+description = ""
+
+[tool.poetry.dependencies]
+python = "^3.9"
+flask = ">=2.3.0"
+requests = ">=2.28.0"
+gunicorn = ">=20.1.0"
+toml = ">=0.10.2"
+yarl = ">=1.9.4"
+pydantic = ">=2.8.2"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "7.0.0"
+flake8-print = "5.0.0"
+flake8-debugger = "4.1.2"
+flake8-eradicate = "1.5.0"
+flake8-todo = "0.7"
+flake8-absolute-import = "1.0.0.2"
+flake8-builtins = "2.2.0"
+isort = "5.13.2"
+yapf = "0.40.2"
+
+[tool.poetry.group.test.dependencies]
+pytest = ">=7.2.0"
+pytest-cov = ">=2.10.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
