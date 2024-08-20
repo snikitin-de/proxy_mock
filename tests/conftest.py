@@ -18,7 +18,7 @@ def client():
 @pytest.fixture(scope="session", autouse=True)
 def run_server():
     try:
-        server_process = subprocess.Popen(["gunicorn", "-c", "proxy_mock/etc/gunicorn.conf.py"])
+        server_process = subprocess.Popen(["make", "run"])
         time.sleep(1)
     except subprocess.SubprocessError as err:
         pytest.fail(err)
@@ -28,7 +28,7 @@ def run_server():
 
 
 @pytest.fixture
-def configure_mock(client):
+def configure_mock(client: ProxyMock):
     request_data = deepcopy(TEST_CONFIGURE_DATA)
 
     configure_response = client.configure_mock(**request_data)
@@ -38,7 +38,7 @@ def configure_mock(client):
 
 
 @pytest.fixture
-def configure_binary_mock(client):
+def configure_binary_mock(client: ProxyMock):
     request_data = deepcopy(TEST_CONFIGURE_BINARY_DATA)
 
     configure_response = client.configure_binary_mock(**request_data)
@@ -48,6 +48,6 @@ def configure_binary_mock(client):
 
 
 @pytest.fixture(autouse=True)
-def setup_server(client):
-    client.clear_mocks()
-    client.clear_params()
+def setup_server(client: ProxyMock):
+    client.clean_storage()
+    client.clean_traffic()

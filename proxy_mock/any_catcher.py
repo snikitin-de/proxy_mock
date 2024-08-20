@@ -9,15 +9,14 @@ from flask import jsonify
 from flask import request
 from pydantic import ValidationError
 
-from proxy_mock.constants import MOCK_PARAMS_STORAGE
 from proxy_mock.etc.settings import Config
 from proxy_mock.etc.settings import configure_logger
 from proxy_mock.etc.settings import get_version_from_pyproject
 from proxy_mock.mock_service import cleanup_storage
-from proxy_mock.mock_service import create_response
-from proxy_mock.mock_service import delete_mock
-from proxy_mock.mock_service import find_response
-from proxy_mock.mock_service import path_finder
+from proxy_mock.mock_service import create_mock_data
+from proxy_mock.mock_service import delete_mock_data
+from proxy_mock.mock_service import find_mock_data
+from proxy_mock.mock_service import find_path
 from proxy_mock.mock_service import proxy_request_to_host
 from proxy_mock.mock_service import return_storage
 from proxy_mock.models import ConfigureMockRequestSchema
@@ -25,23 +24,14 @@ from proxy_mock.utils import get_request_data
 from proxy_mock.utils import log_request
 
 
-class MockParams:
-    backend: dict = None
-
-
-class Mock(Flask):
+class MockApp(Flask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.params = {0: MockParams()}
-        self.params_storage = copy.deepcopy(MOCK_PARAMS_STORAGE)
-
-    def reset(self, request_id):
-        self.params.clear()
-        self.params[request_id] = MockParams()
+        self.traffic_storage = []
 
 
-app = Mock(__name__)
+app = MockApp(__name__)
 app.config.from_object(Config)
 
 configure_logger(app)
@@ -50,7 +40,7 @@ version = get_version_from_pyproject(app)
 
 @app.get("/status")
 @log_request
-def status():
+def get_status():
     """Проверка доступности сервера."""
     response = {"success": True, "version": version}
 
@@ -66,7 +56,7 @@ def configure_mock():
     except ValidationError as err:
         return jsonify({"success": False, "error": json.loads(err.json())}), 400
 
-    mock_data = create_response(**validate_data)
+    mock_data = create_mock_data(**validate_data)
     response = {
         "success": True,
         "path": validate_data["path"],
@@ -87,7 +77,7 @@ def configure_binary_mock():
     except ValidationError as err:
         return jsonify({"success": False, "error": json.loads(err.json())}), 400
 
-    mock_data = copy.deepcopy(create_response(**validate_data))
+    mock_data = copy.deepcopy(create_mock_data(**validate_data))
     mock_data["mock_data"]["body"] = str(mock_data["mock_data"]["body"])
     response = {
         "success": True,
@@ -101,21 +91,21 @@ def configure_binary_mock():
 @app.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
 @log_request
 @get_request_data
-def catch_all(request_data) -> Response | tuple[Response, int]:
+def catch_any_requests(request_data):
     """Ловит любой запрос, ищет мок в хранилище по ручке,
     проксирует запрос на заданный хост, иначе
     записывает параметры запроса и выводит ответ, если он есть."""
-    mock_data = find_response(request.path)
+    mock_data = find_mock_data(request.path)
 
     if mock_data is None:
-        app.params_storage.append(request_data)
+        app.traffic_storage.append(request_data)
 
         app.logger.warning(f"Не найден мок {request.path}")
         return jsonify({"error": f"Не найден мок {request.path}"}), 404
 
     # Записывает параметры запроса в хранилище параметров
     request_data["extra_info"] = mock_data["extra_info"]
-    app.params_storage.append(request_data)
+    app.traffic_storage.append(request_data)
 
     app.logger.info("Нашли подготовленный ответ")
     # Возвращает ответ от внешнего хоста, если он указан
@@ -151,35 +141,6 @@ def catch_all(request_data) -> Response | tuple[Response, int]:
     return mock_data["mock_data"]["body"], mock_data["mock_data"]["status_code"], mock_data["mock_data"]["headers"]
 
 
-@app.post("/cleanup_params")
-@log_request
-def clear_params():
-    """Очищает параметры запросов."""
-    app.params_storage = copy.deepcopy(MOCK_PARAMS_STORAGE)
-
-    response = {"success": True, "data": app.params_storage}
-
-    return jsonify(response), 200
-
-
-@app.post("/cleanup_storage")
-@log_request
-def clear_storage():
-    """Очищает хранилище моков.
-    Очищает все хранилище или,
-    если передан квери-параметр path, то
-    удалит только его, если он найден, иначе не удалится ничего
-    """
-    query_params = dict(request.args)
-    path = query_params.get("path")
-
-    result = delete_mock(path) if path else cleanup_storage()
-
-    response = {"success": result, "data": return_storage()}
-
-    return jsonify(response), 200
-
-
 @app.get("/storage")
 @log_request
 def get_storage():
@@ -192,7 +153,7 @@ def get_storage():
 
     data = return_storage()
     if path := query_params.get("path"):
-        if path := path_finder(path):
+        if path := find_path(path):
             data = data.get(path)
         else:
             data = None
@@ -202,11 +163,40 @@ def get_storage():
     return jsonify(response), 200
 
 
-@app.get("/mock_params")
+@app.get("/traffic")
 @log_request
 def get_mock_params():
     """Выводит собранные данные от входящих запросов."""
-    response = {"success": True, "data": app.params_storage}
+    response = {"success": True, "data": app.traffic_storage}
+
+    return jsonify(response), 200
+
+
+@app.post("/traffic/clean")
+@log_request
+def clean_traffic():
+    """Очищает параметры запросов."""
+    app.traffic_storage = []
+
+    response = {"success": True, "data": app.traffic_storage}
+
+    return jsonify(response), 200
+
+
+@app.post("/storage/clean")
+@log_request
+def clean_storage():
+    """Очищает хранилище моков.
+    Очищает все хранилище или,
+    если передан квери-параметр path, то
+    удалит только его, если он найден, иначе не удалится ничего
+    """
+    query_params = dict(request.args)
+    path = query_params.get("path")
+
+    result = delete_mock_data(path) if path else cleanup_storage()
+
+    response = {"success": result, "data": return_storage()}
 
     return jsonify(response), 200
 
@@ -218,7 +208,7 @@ def catch_unknown_path(error, request_data):
     app.logger.warning(f"Путь не найден: {error}")
 
     # Записывает параметры запроса в хранилище параметров
-    app.params_storage.append(request_data)
+    app.traffic_storage.append(request_data)
 
     return jsonify({"error": "Not found"}), 404
 

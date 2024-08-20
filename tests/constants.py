@@ -59,3 +59,4 @@ TEST_CONFIGURE_BINARY_DATA = {
 }
 
 PROXY_HOST_DATA = "http://ivi.ru", "/profile/notifications"
+INCOMPLETE_PROXY_HOST = "ivi.ru", "/profile/notifications"

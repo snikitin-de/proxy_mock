@@ -20,4 +20,4 @@ kill_proxy_mock:
 	sudo netstat -tnlp | grep ':5000' | awk '{print $$7}' | awk -F'/' '{print $$1}' | xargs kill -9 | true
 
 test:
-	pytest
+	pytest --cov=proxy_mock

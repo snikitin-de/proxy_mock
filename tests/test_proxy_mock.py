@@ -7,6 +7,7 @@ from client.client import ProxyMock
 from tests.constants import BYTE_RESPONSE
 from tests.constants import EXPECTED_RESPONSE
 from tests.constants import EXPECTED_STATUSES
+from tests.constants import INCOMPLETE_PROXY_HOST
 from tests.constants import MOCK_PATHS
 from tests.constants import MOCK_PATHS_PROTO
 from tests.constants import PROXY_HOST_DATA
@@ -64,7 +65,7 @@ class TestConfigure:
         assert mock_response.json() == request_data["body"]
         assert mock_response.status_code == request_data["status_code"]
 
-        request_params_response = client.get_request_params()
+        request_params_response = client.get_traffic()
         assert request_params_response.get("data")
         for req_param in request_params_response["data"]:
             assert req_param["extra_info"] == request_data["extra_info"]
@@ -113,6 +114,17 @@ class TestConfigure:
         assert mock_response.json() == request_data["body"]
         assert mock_response.status_code == request_data["status_code"]
 
+    def test_configure_mock_with_bad_proxy_host(self, client: ProxyMock):
+        request_data = {}
+        proxy_host, path = INCOMPLETE_PROXY_HOST
+
+        request_data["proxy_host"] = proxy_host
+        request_data["path"] = path
+
+        configure_response = client.configure_mock(**request_data)
+        assert not configure_response.get("success"), configure_response
+        assert configure_response.get("error"), configure_response
+
 
 class TestConfigureBinary:
 
@@ -147,7 +159,7 @@ class TestConfigureBinary:
         assert mock_response.content == request_data["body"]
         assert mock_response.status_code == request_data["status_code"]
 
-        request_params_response = client.get_request_params()
+        request_params_response = client.get_traffic()
         assert request_params_response.get("data")
         for req_param in request_params_response["data"]:
             assert req_param["extra_info"] == request_data["extra_info"]
@@ -241,14 +253,14 @@ class TestGetStorage:
 class TestGetRequestParams:
 
     def test_get_request_params(self, client: ProxyMock):
-        response = client.get_request_params()
+        response = client.get_traffic()
 
         assert response["success"]
         assert not response["data"]
 
     def test_get_request_params_by_existing_service(self, client: ProxyMock, configure_mock):
         client.execute_request_and_get_response_body("GET", configure_mock["path"])
-        response = client.get_request_params()
+        response = client.get_traffic()
 
         assert response["success"]
         assert response["data"]
@@ -262,7 +274,7 @@ class TestGetRequestParams:
     def test_send_proto_request(self, client: ProxyMock, configure_binary_mock):
         client.execute_request("POST", configure_binary_mock["path"], data=BYTE_RESPONSE)
 
-        response = client.get_request_params()
+        response = client.get_traffic()
 
         assert response["success"]
         assert response["data"]
@@ -276,7 +288,7 @@ class TestGetRequestParams:
         test_header, value = "X-Test-Header", "123"
         client.execute_request("POST", configure_mock["path"], headers={test_header: value})
 
-        response = client.get_request_params()
+        response = client.get_traffic()
 
         assert response["success"]
         assert response["data"]
@@ -292,21 +304,21 @@ class TestClearStorage:
         storage = client.get_storage()
         assert len(storage["data"]) == 2
 
-        response = client.clear_mocks()
+        response = client.clean_storage()
         assert response.get("success")
 
         storage = client.get_storage()
         assert not storage["data"]
 
     def test_delete_existing_mock(self, client: ProxyMock, configure_mock):
-        response = client.clear_mocks(configure_mock["path"])
+        response = client.clean_storage(configure_mock["path"])
         assert response.get("success")
 
         storage = client.get_storage(configure_mock["path"])
         assert not storage["data"]
 
     def test_delete_non_existent_mock(self, client: ProxyMock, configure_mock):
-        response = client.clear_mocks(configure_mock["path"] + "/test")
+        response = client.clean_storage(configure_mock["path"] + "/test")
         assert not response.get("success")
 
         storage = client.get_storage(configure_mock["path"])
@@ -323,11 +335,19 @@ class TestClearParams:
         mock_response = client.execute_request_and_get_response_body("GET", configure_binary_mock["path"])
         assert mock_response
 
-        params_storage = client.get_request_params()
-        assert len(params_storage) == 2
+        traffic_storage = client.get_traffic()
+        assert len(traffic_storage) == 2
 
-        response = client.clear_params()
+        response = client.clean_traffic()
         assert response.get("success")
 
-        params_storage = client.get_request_params()
-        assert not params_storage["data"]
+        traffic_storage = client.get_traffic()
+        assert not traffic_storage["data"]
+
+
+def test_catch_unknown_path(client: ProxyMock):
+    path = "/unknown"
+    response = client.execute_request("POST", path)
+
+    assert response.status_code == 404
+    assert response.json().get("error") == f"Не найден мок {path}"

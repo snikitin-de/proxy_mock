@@ -1,6 +1,3 @@
-from copy import deepcopy
-
-from proxy_mock.constants import MOCK_STORAGE
 from proxy_mock.models import MockDataSchema
 from proxy_mock.models import MockPathSchema
 
@@ -8,9 +5,9 @@ from proxy_mock.models import MockPathSchema
 class MockStorage:
 
     def __init__(self) -> None:
-        self._storage = deepcopy(MOCK_STORAGE)
+        self._storage = {}
 
-    def set_response(
+    def set_mock_data(
         self,
         path: str,
         mock_data: dict,
@@ -27,7 +24,7 @@ class MockStorage:
         ).model_dump()
         return self._storage[path]
 
-    def get_response(self, path: str) -> dict | None:
+    def get_mock_data(self, path: str) -> dict | None:
         """Достать подготовленный ответ"""
         return self._storage.get(path)
 
@@ -35,14 +32,14 @@ class MockStorage:
         """Вывод хранилища моков"""
         return self._storage
 
-    def clear_storage(self) -> bool:
+    def clean_storage(self) -> bool:
         """Очистка хранилища моков"""
-        self._storage = deepcopy(MOCK_STORAGE)
+        self._storage = {}
         return True
 
-    def delete_mock_from_storage(self, path: str) -> bool:
+    def delete_mock_data(self, path: str) -> bool:
         """Удаляет мок из хранилища"""
         return True if self._storage.pop(path, None) else False
 
 
-STORAGE = MockStorage()
+mock_storage = MockStorage()

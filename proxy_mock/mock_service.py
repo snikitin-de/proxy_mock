@@ -1,23 +1,20 @@
 import copy
-import logging
 
 import requests
 from flask import Request
 from yarl import URL
 
-from proxy_mock.storage import STORAGE
+from proxy_mock.storage import mock_storage
 from proxy_mock.utils import is_integer
 
-logger = logging.getLogger(__name__)
 
-
-def path_finder(path: str) -> str | None:
+def find_path(path: str) -> str | None:
     """Подбирает ручку в хранилище"""
     # Удаляем начальные и конечные слеши, если они есть
     path = path.strip("/")
 
     # Проверяем, есть ли путь в хранилище
-    mock_params = STORAGE.get_response(path)
+    mock_params = mock_storage.get_mock_data(path)
     if mock_params:
         return path
 
@@ -26,7 +23,7 @@ def path_finder(path: str) -> str | None:
     new_path = new_path.strip("/")
 
     # Проверяем, есть ли новый путь в хранилище
-    mock_params = STORAGE.get_response(new_path)
+    mock_params = mock_storage.get_mock_data(new_path)
     if mock_params:
         return new_path
 
@@ -34,35 +31,35 @@ def path_finder(path: str) -> str | None:
     return None
 
 
-def find_response(path: str) -> dict | None:
+def find_mock_data(path: str) -> dict | None:
     """Ищет ручку в хранилище"""
-    if new_path := path_finder(path):
-        return STORAGE.get_response(new_path)
+    if new_path := find_path(path):
+        return mock_storage.get_mock_data(new_path)
 
     return None
 
 
-def create_response(**kwargs) -> dict:
+def create_mock_data(**kwargs) -> dict:
     """Записывает ручку в хранилище"""
-    return STORAGE.set_response(**kwargs)
+    return mock_storage.set_mock_data(**kwargs)
 
 
 def cleanup_storage() -> bool:
     """Очищает хранилище"""
-    return STORAGE.clear_storage()
+    return mock_storage.clean_storage()
 
 
-def delete_mock(path: str) -> bool:
+def delete_mock_data(path: str) -> bool:
     """Удаляет мок из хранилища"""
-    if new_path := path_finder(path):
-        return STORAGE.delete_mock_from_storage(new_path)
+    if new_path := find_path(path):
+        return mock_storage.delete_mock_data(new_path)
 
     return False
 
 
 def return_storage() -> dict:
     """Выводит хранилище"""
-    storage = copy.deepcopy(STORAGE.get_storage())
+    storage = copy.deepcopy(mock_storage.get_storage())
     for mock in storage.values():
         if isinstance(mock["mock_data"]["body"], bytes):
             mock["mock_data"]["body"] = str(mock["mock_data"]["body"])

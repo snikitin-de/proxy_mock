@@ -4,8 +4,8 @@
 class Endpoints:
     status = "/status"
     configure_mock = "/configure_mock"
-    configure_binary_mock = "/configure_mock/binary"
-    cleanup_storage = "/cleanup_storage"
-    cleanup_params = "/cleanup_params"
-    mock_params = "/mock_params"
+    configure_mock_binary = "/configure_mock/binary"
+    storage_clean = "/storage/clean"
+    traffic_clean = "/traffic/clean"
+    traffic = "/traffic"
     storage = "/storage"

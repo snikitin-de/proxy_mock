@@ -89,8 +89,16 @@ class ProxyMock(Route):
         request_data = pickle.dumps(request_data)
 
         return super().execute_request_and_get_response_body(
-            "POST", Endpoints.configure_binary_mock, data=request_data
+            "POST", Endpoints.configure_mock_binary, data=request_data
         )
+
+    def get_traffic(self):
+        """Вывод параметров мока.
+
+        :param service: Имя сервиса
+        :return: Ответ в формате json
+        """
+        return super().execute_request_and_get_response_body("GET", Endpoints.traffic)
 
     def get_storage(self, path: str | None = None):
         """Вывод хранилища моков.
@@ -103,29 +111,21 @@ class ProxyMock(Route):
 
         return super().execute_request_and_get_response_body("GET", full_path)
 
-    def clear_mocks(self, path: str | None = None):
+    def clean_storage(self, path: str | None = None):
         """Очистка моков.
 
         :param path: Путь мока
         :return: Ответ в формате json
         """
         query_params = {**({"path": path} if path else {})}
-        full_path = URL().with_path(Endpoints.cleanup_storage).with_query(query_params).human_repr()
+        full_path = URL().with_path(Endpoints.storage_clean).with_query(query_params).human_repr()
 
         return super().execute_request_and_get_response_body("POST", full_path)
 
-    def clear_params(self):
+    def clean_traffic(self):
         """Очистка параметров запросов.
 
         :param service: Имя сервиса
         :return: Ответ в формате json
         """
-        return super().execute_request_and_get_response_body("POST", Endpoints.cleanup_params)
-
-    def get_request_params(self):
-        """Вывод параметров мока.
-
-        :param service: Имя сервиса
-        :return: Ответ в формате json
-        """
-        return super().execute_request_and_get_response_body("GET", Endpoints.mock_params)
+        return super().execute_request_and_get_response_body("POST", Endpoints.traffic_clean)
