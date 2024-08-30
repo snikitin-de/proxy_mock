@@ -55,13 +55,13 @@ def log_request(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
         response = func(*args, **kwargs)
-        duration = round((time.time() - start_time) * 1000, 1)
+        duration = round((time.time() - start_time) * 1000, 2)
         data = {
             "method": request.method,
             "path": request.full_path.strip('?'),
             "body": request.get_json(silent=True) or {},
             "status": response.status_code if isinstance(response, Response) else response[1],
-            "latency": duration,
+            "latency": f"{duration}ms",
         }
         current_app.logger.info(json.dumps(data))
         return response

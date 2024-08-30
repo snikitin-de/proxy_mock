@@ -5,6 +5,7 @@ import pytest
 
 from client.client import ProxyMock
 from tests.constants import BYTE_RESPONSE
+from tests.constants import EMPTY_BYTE_RESPONSE
 from tests.constants import EXPECTED_RESPONSE
 from tests.constants import EXPECTED_STATUSES
 from tests.constants import INCOMPLETE_PROXY_HOST
@@ -207,6 +208,16 @@ class TestConfigureBinary:
 
         assert mock_response.content == request_data["body"]
         assert mock_response.status_code == request_data["status_code"]
+
+    def test_configure_binary_empty_response(self, client: ProxyMock):
+        request_data = deepcopy(TEST_CONFIGURE_BINARY_DATA)
+        request_data["body"] = EMPTY_BYTE_RESPONSE
+
+        configure_response = client.configure_binary_mock(**request_data)
+        assert configure_response.get("success")
+
+        mock_response = client.execute_request("GET", request_data["path"])
+        assert mock_response.content == EMPTY_BYTE_RESPONSE
 
 
 class TestGetStorage:

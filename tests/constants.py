@@ -37,6 +37,7 @@ EXPECTED_RESPONSE = [
 EXPECTED_STATUSES = [201, 302, 425, 599]
 
 BYTE_RESPONSE = "Any Proto Object".encode()
+EMPTY_BYTE_RESPONSE = b''
 
 TEST_CONFIGURE_DATA = {
     "path": "/test",
