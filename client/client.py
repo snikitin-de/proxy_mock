@@ -3,7 +3,7 @@ from typing import Any
 
 from yarl import URL
 
-from client import Route
+from client.route import Route
 from client.service_endpoints import Endpoints
 
 

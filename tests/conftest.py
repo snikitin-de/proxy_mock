@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import pytest
 
-from client.client import ProxyMock
+from client import ProxyMock
 from tests import HOST
 from tests.constants import TEST_CONFIGURE_BINARY_DATA
 from tests.constants import TEST_CONFIGURE_DATA

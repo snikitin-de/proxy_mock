@@ -47,6 +47,7 @@
 
     Используйте Makefile для запуска сервиса:
     ```bash
+    sudo apt install make
     make run
     ```
 
