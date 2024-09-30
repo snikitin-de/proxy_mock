@@ -12,7 +12,7 @@ RUN python -m pip install --upgrade pip setuptools wheel
 # Ставим python-зависимости
 FROM base-image AS build-image
 
-RUN pip install poetry==1.8.2
+RUN pip install poetry==1.8.3
 
 RUN mkdir -p /www/proxy_mock/
 WORKDIR /www/proxy_mock/

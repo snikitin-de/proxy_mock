@@ -70,7 +70,15 @@ def configure_mock():
 @log_request
 def configure_binary_mock():
     """Записывает мок с бинарным содержимым в хранилище."""
-    input_data = pickle.loads(request.data)
+    input_data = request.data
+
+    if not input_data:
+        return jsonify({"success": False, "error": "Данные не переданы"}), 400
+
+    try:
+        input_data = pickle.loads(input_data)
+    except pickle.UnpicklingError as err:
+        return jsonify({"success": False, "error": f"Не удалось распарсить данные: {err}"}), 400
 
     try:
         validate_data = ConfigureMockRequestSchema.model_validate(input_data).model_dump()
