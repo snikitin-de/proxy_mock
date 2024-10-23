@@ -33,6 +33,7 @@ class MockApp(Flask):
 
 app = MockApp(__name__)
 app.config.from_object(Config)
+app.json.ensure_ascii = False
 
 configure_logger(app)
 version = get_version_from_pyproject(app)
@@ -222,5 +223,4 @@ def catch_unknown_path(error, request_data):
 
 
 if __name__ == "__main__":
-    app.json.ensure_ascii = False
     app.run(host="0.0.0.0")
