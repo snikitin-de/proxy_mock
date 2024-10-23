@@ -31,10 +31,34 @@ def find_path(path: str) -> str | None:
     return None
 
 
-def find_mock_data(path: str) -> dict | None:
+def find_mock_data(request_data: dict) -> dict | None:
     """Ищет ручку в хранилище"""
-    if new_path := find_path(path):
-        return mock_storage.get_mock_data(new_path)
+    request_path = request_data['request_path']
+
+    if new_path := find_path(request_path):
+        request_params = request_data['request_params']
+        request_body = request_data['request_body']
+        request_form = request_data['request_form']
+
+        mock_data = mock_storage.get_mock_data(new_path)
+        mock_request_params = mock_data['mock_data']['request_params']
+        mock_request_body = mock_data['mock_data']['request_body']
+        mock_request_form = mock_data['mock_data']['request_form']
+
+        if request_params not in (None, {}) and mock_request_params not in (None, {}):
+            if request_params == mock_request_params:
+                return mock_data
+
+        if request_body not in (None, {}) and mock_request_body not in (None, {}):
+            if request_body == mock_request_body:
+                return mock_data
+
+        if request_form not in (None, {}) and mock_request_form not in (None, {}):
+            if request_form == mock_request_form:
+                return mock_data
+
+        if request_params in (None, {}) and request_body in (None, {}) and request_form in (None, {}):
+            return mock_data
 
     return None
 

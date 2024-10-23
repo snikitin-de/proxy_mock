@@ -32,11 +32,26 @@ def get_request_data(func):
         # Забираем параметры заголовков текущего запроса
         request_headers = {header: value for header, value in request.headers.items()}
 
+        # Получаем параметры запроса
+        key_req = request.args.keys()
+        request_params = {}
+
+        for key in key_req:
+            request_params[key] = request.args.get(key)
+
+        # Получаем данные формы
+        request_form = {}
+
+        for key in request.form:
+            request_form[key] = request.form[key]
+
         request_data = json.loads(
             InputRequestSchema(
                 request_body=request_body,
                 request_headers=request_headers,
+                request_form=request_form,
                 request_path=request.path,
+                request_params=request_params,
             ).model_dump_json()
         )
 

@@ -103,7 +103,7 @@ def catch_any_requests(request_data):
     """Ловит любой запрос, ищет мок в хранилище по ручке,
     проксирует запрос на заданный хост, иначе
     записывает параметры запроса и выводит ответ, если он есть."""
-    mock_data = find_mock_data(request.path)
+    mock_data = find_mock_data(request_data)
 
     if mock_data is None:
         app.traffic_storage.append(request_data)

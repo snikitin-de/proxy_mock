@@ -8,6 +8,9 @@ from yarl import URL
 
 
 class MockDataSchema(BaseModel):
+    request_body: Any = Field({})
+    request_form: dict = Field({})
+    request_params: dict = Field({})
     body: Any = Field(None)
     status_code: int = Field(200)
     headers: dict = Field({})
@@ -31,11 +34,13 @@ class ConfigureMockRequestSchema(MockPathSchema):
 
     @field_serializer('path')
     def serialize_path(self, path: str, _info):
-        return path.strip("/").split("?")[0]
+        return path.strip("/")
 
 
 class InputRequestSchema(BaseModel):
     request_body: Any = Field({})
     request_headers: dict = Field({})
+    request_form: dict = Field({})
     request_path: str = Field("")
+    request_params: dict = Field({})
     extra_info: dict = Field({})
