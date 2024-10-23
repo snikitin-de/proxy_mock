@@ -222,4 +222,5 @@ def catch_unknown_path(error, request_data):
 
 
 if __name__ == "__main__":
+    app.json.ensure_ascii = False
     app.run(host="0.0.0.0")
