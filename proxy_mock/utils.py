@@ -1,4 +1,5 @@
 import json
+import hashlib
 import time
 from functools import wraps
 
@@ -91,3 +92,10 @@ def is_integer(value: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def get_dict_hash(dictionary: dict | None):
+    if dictionary not in ({}, None):
+        return hashlib.md5(json.dumps(dictionary, sort_keys=True).encode('utf-8')).hexdigest()
+
+    return None

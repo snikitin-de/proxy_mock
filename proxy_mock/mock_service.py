@@ -8,13 +8,13 @@ from proxy_mock.storage import mock_storage
 from proxy_mock.utils import is_integer
 
 
-def find_path(path: str) -> str | None:
+def find_path(path: str, request_data: dict = None) -> str | None:
     """Подбирает ручку в хранилище"""
     # Удаляем начальные и конечные слеши, если они есть
     path = path.strip("/")
 
     # Проверяем, есть ли путь в хранилище
-    mock_params = mock_storage.get_mock_data(path)
+    mock_params = mock_storage.get_mock_data(path, request_data)
     if mock_params:
         return path
 
@@ -35,30 +35,9 @@ def find_mock_data(request_data: dict) -> dict | None:
     """Ищет ручку в хранилище"""
     request_path = request_data['request_path']
 
-    if new_path := find_path(request_path):
-        request_params = request_data['request_params']
-        request_body = request_data['request_body']
-        request_form = request_data['request_form']
-
-        mock_data = mock_storage.get_mock_data(new_path)
-        mock_request_params = mock_data['mock_data']['request_params']
-        mock_request_body = mock_data['mock_data']['request_body']
-        mock_request_form = mock_data['mock_data']['request_form']
-
-        if request_params not in (None, {}) and mock_request_params not in (None, {}):
-            if request_params == mock_request_params:
-                return mock_data
-
-        if request_body not in (None, {}) and mock_request_body not in (None, {}):
-            if request_body == mock_request_body:
-                return mock_data
-
-        if request_form not in (None, {}) and mock_request_form not in (None, {}):
-            if request_form == mock_request_form:
-                return mock_data
-
-        if request_params in (None, {}) and request_body in (None, {}) and request_form in (None, {}):
-            return mock_data
+    if new_path := find_path(request_path, request_data):
+        mock_data = mock_storage.get_mock_data(new_path, request_data)
+        return mock_data
 
     return None
 

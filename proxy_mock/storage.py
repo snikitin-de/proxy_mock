@@ -1,6 +1,7 @@
 from proxy_mock.models import MockDataSchema
 from proxy_mock.models import MockPathSchema
-
+from utils import get_dict_hash
+import json
 
 class MockStorage:
 
@@ -16,17 +17,44 @@ class MockStorage:
         timeout: float,
     ) -> dict:
         """Записать мок для ручки в хранилище"""
-        self._storage[path] = MockPathSchema(
+        key = json.dumps({
+            'path': path,
+            'request_params_hash': get_dict_hash(mock_data.get('request_params')),
+            'request_body_hash': get_dict_hash(mock_data.get('request_body')),
+            'request_form_hash': get_dict_hash(mock_data.get('request_form'))
+        }, sort_keys=True)
+
+        self._storage[key] = MockPathSchema(
             mock_data=MockDataSchema(**mock_data).model_dump(),
             extra_info=extra_info,
             proxy_host=proxy_host,
             timeout=timeout,
         ).model_dump()
-        return self._storage[path]
 
-    def get_mock_data(self, path: str) -> dict | None:
+        return self._storage[key]
+
+    def get_mock_data(self, path: str, mock_data: dict = None) -> dict | None:
         """Достать подготовленный ответ"""
-        return self._storage.get(path)
+
+        if mock_data:
+            request_params_hash = get_dict_hash(mock_data['request_params'])
+            request_body_hash = get_dict_hash(mock_data['request_body'])
+            request_form_hash = get_dict_hash(mock_data['request_form'])
+
+            for key in self._storage.keys():
+                key_json = json.loads(key)
+                mock_path = key_json['path']
+                mock_request_params_hash = key_json['request_params_hash']
+                mock_request_body_hash = key_json['request_body_hash']
+                mock_request_form_hash = key_json['request_form_hash']
+
+                if mock_path == path:
+                    if ((mock_request_params_hash == request_params_hash and mock_request_params_hash is not None) or
+                        (mock_request_body_hash == request_body_hash and mock_request_body_hash is not None) or
+                        (mock_request_form_hash == request_form_hash and mock_request_form_hash is not None)):
+                        return self._storage.get(key)
+
+        return None
 
     def get_storage(self) -> dict:
         """Вывод хранилища моков"""
