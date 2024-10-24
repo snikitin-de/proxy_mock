@@ -1,6 +1,7 @@
 from proxy_mock.models import MockDataSchema
 from proxy_mock.models import MockPathSchema
-from utils import get_dict_hash
+from proxy_mock.utils import get_dict_hash
+
 import json
 
 class MockStorage:
