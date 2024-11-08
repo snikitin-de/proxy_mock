@@ -7,13 +7,15 @@ import os
 
 class MockStorage:
     storage_path = 'storage.json'
+    current_dir = os.path.dirname(__file__)
+    full_path = os.path.join(current_dir, storage_path)
 
     def __init__(self) -> None:
         self._storage = {}
 
         try:
-            if os.path.exists(self.storage_path):
-                with open(self.storage_path, 'r') as fp:
+            if os.path.exists(self.full_path):
+                with open(self.full_path, 'r') as fp:
                     file_storage = json.loads(fp.read())
 
                     if len(file_storage):
@@ -47,7 +49,7 @@ class MockStorage:
         ).model_dump()
 
         try:
-            with open('storage.json', 'w') as fp:
+            with open(self.full_path, 'w') as fp:
                 fp.write(json.dumps(self._storage, indent=4))
         except OSError as exOS:
             print("OS error: " + str(exOS))
