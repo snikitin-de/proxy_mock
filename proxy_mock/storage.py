@@ -3,11 +3,25 @@ from proxy_mock.models import MockPathSchema
 from proxy_mock.utils import get_dict_hash
 
 import json
+import os
 
 class MockStorage:
+    storage_path = 'storage.json'
 
     def __init__(self) -> None:
         self._storage = {}
+
+        try:
+            if os.path.exists(self.storage_path):
+                with open(self.storage_path, 'r') as fp:
+                    file_storage = json.loads(fp.read())
+
+                    if len(file_storage):
+                        self._storage = file_storage
+        except OSError as exOS:
+            print("OS error: " + str(exOS))
+        except Exception as ex:
+            print(ex)
 
     def set_mock_data(
         self,
@@ -31,6 +45,14 @@ class MockStorage:
             proxy_host=proxy_host,
             timeout=timeout,
         ).model_dump()
+
+        try:
+            with open('storage.json', 'w') as fp:
+                fp.write(json.dumps(self._storage, indent=4))
+        except OSError as exOS:
+            print("OS error: " + str(exOS))
+        except Exception as ex:
+            print(ex)
 
         return self._storage[key]
 
